@@ -18,7 +18,7 @@ const Login = () => {
                 <label htmlFor="Password"><input type="password" name="Password" placeholder='Password' {...register('password',{required:true})} className='text-white bg-[#5B749F] rounded-lg px-2 py-1 w-[300px]'/></label>
                 <button className='text-black font-bold bg-linear-to-r from-[#46B4FE] to-[#0DE6FE] w-[300px] rounded-lg px-2 py-1' onClick={handleSubmit(onSubmit)}>Login</button>
             </form>
-            <div>
+            <div> 
               <h2 className='text-white text-md font-semibold'>OR</h2>
             </div>
             <div className='flex flex-col items-center justify-center'>
@@ -26,7 +26,7 @@ const Login = () => {
               <button className='bg-blue-500 text-white font-bold w-[300px] rounded-lg px-2 py-1'>Sign in with LinkedIn</button>
             </div>
             <div className='flex flex-col items-center justify-center my-2'>
-                <h2 className='text-white font-thin text-md'>Dont't have an account? <span className='text-[#0DE6FE] font-semibold text-md' onClick={() => navigate('/signup')}>Sign Up</span></h2>
+                <h2 className='text-white font-thin text-md'>Dont't have an account? <span className='text-[#0DE6FE] font-semibold text-md cursor-pointer' onClick={() => navigate('/signup')}> Sign Up</span></h2>
             </div>
           </div>
         </div>
