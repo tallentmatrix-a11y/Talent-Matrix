@@ -1,9 +1,10 @@
 import React from 'react'
 import {useForm} from 'react-hook-form'
-
+import { useNavigate }  from 'react-router-dom'
 const Login = () => {
     const {register, handleSubmit} = useForm()
     const onSubmit = (data) => console.log(data)
+    const navigate = useNavigate()
     return (
         <>
         <div className='w-auto min-h-screen flex flex-col items-center justify-center bg-linear-to-b from-[#1F3F77] to-bg-[#21427C]'>
@@ -25,7 +26,7 @@ const Login = () => {
               <button className='bg-blue-500 text-white font-bold w-[300px] rounded-lg px-2 py-1'>Sign in with LinkedIn</button>
             </div>
             <div className='flex flex-col items-center justify-center my-2'>
-                <h2 className='text-white font-thin text-md'>Dont't have an account? <span className='text-[#0DE6FE] font-semibold text-md'>Sign Up</span></h2>
+                <h2 className='text-white font-thin text-md'>Dont't have an account? <span className='text-[#0DE6FE] font-semibold text-md' onClick={() => navigate('/signup')}>Sign Up</span></h2>
             </div>
           </div>
         </div>
