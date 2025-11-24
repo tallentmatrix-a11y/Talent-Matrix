@@ -10,6 +10,8 @@ const appliedJobsRoutes = require('./src/routes/appliedJobsRoutes');
 const projectRoutes = require('./src/routes/projectRoutes');
 const leetcodeRoutes = require('./src/routes/leetcodeRoutes'); // <--- Import
 const resumeRoutes = require('./src/routes/resumeRoutes');
+const books = require('./src/routes/booksRoutes');
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -21,6 +23,8 @@ app.use('/api/applied-jobs', appliedJobsRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/leetcode', leetcodeRoutes); // <--- Mount it
 app.use('/api/resume', resumeRoutes);
+app.use('/api/books', books);
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
