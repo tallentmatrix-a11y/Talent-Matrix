@@ -19,6 +19,7 @@
     "express": "^5.1.0",
     "linkedin-jobs-api": "^1.0.7",
     "multer": "^2.0.2",
+    "openai": "^6.9.1",
     "pdf-extraction": "^1.0.2"
   },
   "devDependencies": {

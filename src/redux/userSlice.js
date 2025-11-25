@@ -1,9 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-const API_BASE = "http://localhost:3000";
+const API_BASE = "http://localhost:3000"; // Ensure this matches your backend port
 
-// --- Thunks ---
+// --- THUNKS ---
 
+// 1. Fetch Basic User Data
 export const fetchUserData = createAsyncThunk('user/fetchData', async (userId) => {
   const res = await fetch(`${API_BASE}/api/signup/${userId}`);
   if (!res.ok) throw new Error('Failed to fetch user');
@@ -42,11 +43,12 @@ export const fetchUserData = createAsyncThunk('user/fetchData', async (userId) =
     skills: [], 
     appliedJobs: [],
     manualProjects,
-    codingStats: {} // You can add logic to fetch stats here if needed
+    leetcodeStats: null, // Initialize
+    codingStats: {}
   };
 });
 
-// NEW: Fetch GitHub Repositories
+// 2. Fetch GitHub Repos
 export const fetchGithubRepos = createAsyncThunk('user/fetchGithub', async (username) => {
   if (!username) return [];
   const res = await fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=5`);
@@ -64,9 +66,18 @@ export const fetchGithubRepos = createAsyncThunk('user/fetchGithub', async (user
     }));
 });
 
-// Update Profile Data (Individual or Bulk)
+// 3. NEW: Fetch LeetCode Stats
+export const fetchLeetCodeStats = createAsyncThunk('user/fetchLeetCode', async (username) => {
+  if (!username) return null;
+  // NOTE: Ensure your express app is mounting the route at /api/leetcode
+  const res = await fetch(`${API_BASE}/api/leetcode/${username}`);
+  if (!res.ok) throw new Error("LeetCode User not found");
+  const data = await res.json();
+  return data; // Returns { total, easy, medium, hard, topics }
+});
+
+// 4. Update Profile
 export const updateUserProfile = createAsyncThunk('user/update', async ({ userId, data }) => {
-  // Convert camelCase to snake_case for backend
   const payload = {};
   for (const key in data) {
     const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
@@ -80,9 +91,10 @@ export const updateUserProfile = createAsyncThunk('user/update', async ({ userId
   });
   
   if (!res.ok) throw new Error('Update failed');
-  return data; // Return the updated fields to update Redux state immediately
+  return data;
 });
 
+// 5. Upload Resume
 export const uploadResumeFile = createAsyncThunk('user/uploadResume', async ({ userId, file }) => {
     const formData = new FormData();
     formData.append('resume', file);
@@ -98,11 +110,13 @@ const userSlice = createSlice({
     data: {
       id: '', name: '', photoDataUrl: '', resumeRemoteUrl: '', 
       skills: [], appliedJobs: [], manualProjects: [], githubProjects: [], semesters: {},
+      leetcodeStats: null,
       githubUsername: '', linkedinUrl: '', mobileNumber: '',
       leetcodeUrl: '', hackerrankUrl: '', codechefUrl: '', codeforcesUrl: ''
     },
     status: 'idle',
     githubStatus: 'idle',
+    leetcodeStatus: 'idle', // Track LeetCode status
     error: null
   },
   reducers: {
@@ -143,13 +157,22 @@ const userSlice = createSlice({
         state.status = 'succeeded';
         state.data = { ...state.data, ...action.payload };
       })
-      // GitHub Repos
+      // GitHub
       .addCase(fetchGithubRepos.pending, (state) => { state.githubStatus = 'loading'; })
       .addCase(fetchGithubRepos.fulfilled, (state, action) => {
         state.githubStatus = 'succeeded';
         state.data.githubProjects = action.payload;
       })
       .addCase(fetchGithubRepos.rejected, (state) => { state.githubStatus = 'failed'; })
+      
+      // LeetCode
+      .addCase(fetchLeetCodeStats.pending, (state) => { state.leetcodeStatus = 'loading'; })
+      .addCase(fetchLeetCodeStats.fulfilled, (state, action) => {
+        state.leetcodeStatus = 'succeeded';
+        state.data.leetcodeStats = action.payload;
+      })
+      .addCase(fetchLeetCodeStats.rejected, (state) => { state.leetcodeStatus = 'failed'; })
+
       // Update Profile
       .addCase(updateUserProfile.fulfilled, (state, action) => {
         state.data = { ...state.data, ...action.payload };

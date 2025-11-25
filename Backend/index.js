@@ -11,6 +11,7 @@ const projectRoutes = require('./src/routes/projectRoutes');
 const leetcodeRoutes = require('./src/routes/leetcodeRoutes'); // <--- Import
 const resumeRoutes = require('./src/routes/resumeRoutes');
 const books = require('./src/routes/booksRoutes');
+const aiRoutes = require('./src/routes/aiRoutes');
 
 const app = express();
 app.use(cors());
@@ -24,6 +25,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/leetcode', leetcodeRoutes); // <--- Mount it
 app.use('/api/resume', resumeRoutes);
 app.use('/api/books', books);
+app.use('/api/ai', aiRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

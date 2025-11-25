@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { 
-    addSkill, deleteSkill, updateSemester, addManualProject, removeManualProject, fetchGithubRepos 
+  addSkill, deleteSkill, updateSemester, addManualProject, removeManualProject, 
+  fetchGithubRepos, fetchLeetCodeStats 
 } from '../redux/userSlice';
 
 const Home = () => {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.user.data);
   const githubStatus = useSelector((state) => state.user.githubStatus);
+  // Optional: You can use this to show a loading spinner for LeetCode
+  const leetcodeStatus = useSelector((state) => state.user.leetcodeStatus);
 
   // Local Inputs
   const [skillInput, setSkillInput] = useState('');
@@ -17,12 +20,32 @@ const Home = () => {
   const [semInput, setSemInput] = useState({ name: '', grade: '' });
   const [projInput, setProjInput] = useState({ title: '', desc: '', link: '', tags: '' });
 
-  // Fetch GitHub Projects on load if username exists
+  // 1. Fetch GitHub Projects
   useEffect(() => {
-    if (user.githubUsername && user.githubProjects?.length === 0) {
+    if (user.githubUsername && (!user.githubProjects || user.githubProjects.length === 0)) {
         dispatch(fetchGithubRepos(user.githubUsername));
     }
-  }, [user.githubUsername, dispatch]);
+  }, [user.githubUsername, user.githubProjects, dispatch]);
+
+  // 2. Fetch LeetCode Stats (Auto-extract username from URL)
+  useEffect(() => {
+    if (user.leetcodeUrl && !user.leetcodeStats) {
+      // Helper to extract "akshay" from "https://leetcode.com/u/akshay/"
+      // Or "akshay" from "akshay"
+      let username = user.leetcodeUrl;
+      
+      if (username.includes("leetcode.com")) {
+          // Remove trailing slash if present
+          const cleanUrl = username.replace(/\/+$/, ""); 
+          const parts = cleanUrl.split('/');
+          username = parts[parts.length - 1]; // Get the last part
+      }
+
+      if (username) {
+        dispatch(fetchLeetCodeStats(username));
+      }
+    }
+  }, [user.leetcodeUrl, user.leetcodeStats, dispatch]);
 
   const computeCgpa = () => {
     const vals = Object.values(user.semesters || {}).map(v => parseFloat(v)).filter(v => !isNaN(v));
@@ -36,6 +59,12 @@ const Home = () => {
       case 'Expert': return 'bg-emerald-500';
       default: return 'bg-gray-400';
     }
+  };
+
+  const getLeetCodeLevel = (solvedCount) => {
+      if (solvedCount > 50) return { label: 'Advanced', color: 'text-red-600 bg-red-50' };
+      if (solvedCount > 20) return { label: 'Intermediate', color: 'text-yellow-600 bg-yellow-50' };
+      return { label: 'Beginner', color: 'text-green-600 bg-green-50' };
   };
 
   const handleAddSkill = (e) => {
@@ -59,7 +88,6 @@ const Home = () => {
       setProjInput({ title: '', desc: '', link: '', tags: '' });
   };
 
-  // Combine Projects
   const allProjects = [
       ...(user.manualProjects || []), 
       ...(user.githubProjects || [])
@@ -69,7 +97,7 @@ const Home = () => {
     <div>
       <h2 className="text-3xl font-bold mb-8 text-gray-900">Profile</h2>
 
-      {/* Profile Header */}
+      {/* Header */}
       <div className="flex gap-6 items-start mb-8">
         <div className="w-[200px] flex-shrink-0">
           <img
@@ -94,7 +122,7 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Contact & Links */}
+      {/* Contact Links */}
       <div className="bg-white p-6 rounded-lg shadow-sm mb-6 border border-gray-200">
         <h3 className="font-bold text-xl mb-4 text-gray-900">Contact & Links</h3>
         <div className="grid grid-cols-3 gap-4 text-sm">
@@ -104,36 +132,111 @@ const Home = () => {
         </div>
       </div>
 
-      {/* CODING PROFILES */}
+      {/* Coding Profiles (Links) */}
       <div className="bg-white p-6 rounded-lg shadow-sm mb-6 border border-gray-200">
         <h3 className="font-bold text-xl mb-4 text-gray-900">Coding Profiles</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
             <div className="flex justify-between items-center mb-2">
               <span className="font-bold text-yellow-600">LeetCode</span>
-              {user.leetcodeUrl && <a href={user.leetcodeUrl} target="_blank" className="text-xs text-blue-500 hover:underline">View</a>}
+              {user.leetcodeUrl && <a href={user.leetcodeUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-500 hover:underline">View</a>}
             </div>
             <div className="text-xs text-gray-500">{user.leetcodeUrl ? "Linked" : "Not Linked"}</div>
           </div>
            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
             <div className="flex justify-between items-center mb-2">
               <span className="font-bold text-blue-800">CodeForces</span>
-              {user.codeforcesUrl && <a href={user.codeforcesUrl} target="_blank" className="text-xs text-blue-500 hover:underline">View</a>}
+              {user.codeforcesUrl && <a href={user.codeforcesUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-500 hover:underline">View</a>}
             </div>
             <div className="text-xs text-gray-500">{user.codeforcesUrl ? "Linked" : "Not Linked"}</div>
           </div>
           <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
-             <div className="flex justify-between items-center mb-2"><span className="font-bold text-green-600">HackerRank</span></div>
-             <div className="text-xs text-gray-500">{user.hackerrankUrl ? "✅ Account Linked" : "Not Linked"}</div>
+              <div className="flex justify-between items-center mb-2"><span className="font-bold text-green-600">HackerRank</span></div>
+              <div className="text-xs text-gray-500">{user.hackerrankUrl ? "✅ Account Linked" : "Not Linked"}</div>
           </div>
           <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
-             <div className="flex justify-between items-center mb-2"><span className="font-bold text-amber-800">CodeChef</span></div>
-             <div className="text-xs text-gray-500">{user.codechefUrl ? "✅ Account Linked" : "Not Linked"}</div>
+              <div className="flex justify-between items-center mb-2"><span className="font-bold text-amber-800">CodeChef</span></div>
+              <div className="text-xs text-gray-500">{user.codechefUrl ? "✅ Account Linked" : "Not Linked"}</div>
           </div>
         </div>
       </div>
 
-      {/* Semester Grades */}
+      {/* --- LEETCODE INSIGHTS SECTION --- */}
+      {user.leetcodeStats && (
+        <div className="bg-white p-6 rounded-lg shadow-sm mb-6 border border-gray-200 animate-fade-in">
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="font-bold text-xl text-gray-900 flex items-center gap-2">
+                    <span className="text-yellow-600">⚡</span> LeetCode Insights
+                </h3>
+                <span className="text-sm font-medium bg-gray-100 px-3 py-1 rounded-full text-gray-600">
+                    Total Solved: <span className="text-black font-bold">{user.leetcodeStats.total || 0}</span>
+                </span>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Left: Stats */}
+                <div className="lg:col-span-1 space-y-4">
+                    <h4 className="font-semibold text-gray-700 mb-3 border-b pb-2">Problem Difficulty</h4>
+                    
+                    <div>
+                        <div className="flex justify-between text-sm mb-1">
+                            <span className="text-green-600 font-medium">Easy</span>
+                            <span className="text-gray-600">{user.leetcodeStats.easy || 0}</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="bg-green-500 h-2 rounded-full" style={{ width: `${((user.leetcodeStats.easy || 0) / (user.leetcodeStats.total || 1)) * 100}%` }}></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div className="flex justify-between text-sm mb-1">
+                            <span className="text-yellow-600 font-medium">Medium</span>
+                            <span className="text-gray-600">{user.leetcodeStats.medium || 0}</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${((user.leetcodeStats.medium || 0) / (user.leetcodeStats.total || 1)) * 100}%` }}></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div className="flex justify-between text-sm mb-1">
+                            <span className="text-red-600 font-medium">Hard</span>
+                            <span className="text-gray-600">{user.leetcodeStats.hard || 0}</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="bg-red-500 h-2 rounded-full" style={{ width: `${((user.leetcodeStats.hard || 0) / (user.leetcodeStats.total || 1)) * 100}%` }}></div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right: Topics */}
+                <div className="lg:col-span-2">
+                    <h4 className="font-semibold text-gray-700 mb-3 border-b pb-2">Top Skills (By Topics)</h4>
+                    
+                    {user.leetcodeStats.topics && user.leetcodeStats.topics.length > 0 ? (
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            {user.leetcodeStats.topics.slice(0, 9).map((topic, idx) => {
+                                const levelData = getLeetCodeLevel(topic.solved);
+                                return (
+                                    <div key={idx} className="border border-gray-100 bg-gray-50 rounded-lg p-3 flex flex-col items-center text-center hover:bg-white hover:shadow-sm transition-all">
+                                        <span className="font-bold text-gray-800 text-sm mb-1">{topic.topicName}</span>
+                                        <div className="text-xs text-gray-500 mb-2">{topic.solved} Problems</div>
+                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide ${levelData.color}`}>
+                                            {levelData.label}
+                                        </span>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    ) : (
+                        <div className="text-gray-400 text-sm italic">No specific topic data available.</div>
+                    )}
+                </div>
+            </div>
+        </div>
+      )}
+
+      {/* Semesters */}
       <div className="bg-white p-6 rounded-lg shadow-sm mb-6 border border-gray-200">
         <h3 className="font-bold text-xl mb-4 text-gray-900">Semester Grades</h3>
         <div className="flex gap-3 flex-wrap mb-4">
@@ -150,7 +253,7 @@ const Home = () => {
         </ul>
       </div>
 
-      {/* Skills Section */}
+      {/* Skills */}
       <div className="bg-white p-6 rounded-lg shadow-sm mb-6 border border-gray-200">
         <div className="mb-4">
           <h3 className="font-bold text-xl mb-2 text-gray-900">Skills</h3>
@@ -181,7 +284,7 @@ const Home = () => {
         </ul>
       </div>
 
-      {/* Projects Section */}
+      {/* Projects */}
       <div className="bg-white p-6 rounded-lg shadow-sm mb-6 border border-gray-200">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-bold text-xl text-gray-900">Projects</h3>
@@ -222,7 +325,7 @@ const Home = () => {
                     <div className="text-sm text-gray-700 mt-1">{project.description}</div>
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
-                    {project.link && <a href={project.link} target="_blank" rel="noopener noreferrer" className="bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-50">View</a>}
+                    {project.link && <a href={project.link} target="_blank" rel="noreferrer" className="bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-50">View</a>}
                     {project.source === 'manual' && <button onClick={() => dispatch(removeManualProject(project.id))} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">Delete</button>}
                   </div>
                 </div>

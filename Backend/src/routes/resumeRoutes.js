@@ -4,6 +4,7 @@ const multer = require('multer');
 const pdf = require('pdf-extraction');
 const fs = require('fs');
 
+
 const upload = multer({ dest: 'uploads/' });
 
 // --- 1. Define Skill Categories & Keywords ---

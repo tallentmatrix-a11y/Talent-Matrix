@@ -1,12 +1,16 @@
 const express = require('express');
 const router = express.Router();
 
+// GraphQL Query to get both generic stats and tag-specific stats
 const LEETCODE_QUERY = `
   query userProfile($username: String!) {
     matchedUser(username: $username) {
-      languageProblemCount {
-        languageName
-        problemsSolved
+      submitStats: submitStatsGlobal {
+        acSubmissionNum {
+          difficulty
+          count
+          submissions
+        }
       }
       tagProblemCounts {
         advanced {
@@ -30,11 +34,13 @@ router.get('/:username', async (req, res) => {
   try {
     const { username } = req.params;
 
+    // We must send headers to mimic a browser, or LeetCode might block the request
     const response = await fetch('https://leetcode.com/graphql', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Referer': 'https://leetcode.com',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
       },
       body: JSON.stringify({
         query: LEETCODE_QUERY,
@@ -49,14 +55,31 @@ router.get('/:username', async (req, res) => {
     }
 
     const userData = data.data.matchedUser;
+    const stats = userData.submitStats?.acSubmissionNum || [];
 
+    // Helper to extract count safely
+    const getCount = (diff) => {
+      const found = stats.find(s => s.difficulty === diff);
+      return found ? found.count : 0;
+    };
+
+    // Flatten topic tags from all categories
+    const allTopics = [
+      ...(userData.tagProblemCounts?.fundamental || []),
+      ...(userData.tagProblemCounts?.intermediate || []),
+      ...(userData.tagProblemCounts?.advanced || [])
+    ].map(t => ({
+      topicName: t.tagName,
+      solved: t.problemsSolved
+    })).sort((a, b) => b.solved - a.solved); // Sort desc by solved count
+
+    // Final JSON structure for Frontend
     res.json({
-      languages: userData.languageProblemCount || [],
-      skills: {
-        advanced: userData.tagProblemCounts?.advanced || [],
-        intermediate: userData.tagProblemCounts?.intermediate || [],
-        fundamental: userData.tagProblemCounts?.fundamental || []
-      }
+      total: getCount('All'),
+      easy: getCount('Easy'),
+      medium: getCount('Medium'),
+      hard: getCount('Hard'),
+      topics: allTopics
     });
 
   } catch (err) {

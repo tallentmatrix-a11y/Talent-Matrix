@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const linkedin = require('linkedin-jobs-api');
 
+
 // Endpoint: GET /api/jobs
 // Accepts query params: query, location, level
 router.get('/', async (req, res) => {
@@ -22,7 +23,7 @@ router.get('/', async (req, res) => {
       remoteFilter: 'remote', // You can make this dynamic if needed
       salary: '100000+',
       experienceLevel: level,
-      limit: '25', 
+      limit: '10', 
       page: '0'
     };
 

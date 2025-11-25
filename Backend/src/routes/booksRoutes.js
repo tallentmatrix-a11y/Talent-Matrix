@@ -1,7 +1,6 @@
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
-
 // Endpoint: GET /api/books?query=...
 router.get('/', async (req, res) => {
     const { query } = req.query;
