@@ -74,7 +74,7 @@ const Home = () => {
       setSkillInput(''); setSkillTags('');
   };
 
-  const filteredSkills = user.skills.filter((s) => s.name.toLowerCase().includes(skillSearch.toLowerCase()));
+  const filteredSkills = (user?.skills || []).filter((s) => s.name.toLowerCase().includes(skillSearch.toLowerCase()));
 
   const handleAddProject = (e) => {
       e.preventDefault();

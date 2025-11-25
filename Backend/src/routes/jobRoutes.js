@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
       remoteFilter: 'remote', // You can make this dynamic if needed
       salary: '100000+',
       experienceLevel: level,
-      limit: '10', 
+      limit: '20', 
       page: '0'
     };
 

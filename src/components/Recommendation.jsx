@@ -1,6 +1,23 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 
+// --- HELPER: Extract Username from LeetCode URL ---
+// Matches the logic used in Home.jsx exactly
+const extractLeetCodeUsername = (url) => {
+  if (!url) return null;
+  
+  let username = url;
+  
+  // If it's a full URL, strip it down
+  if (username.includes("leetcode.com")) {
+      const cleanUrl = username.replace(/\/+$/, ""); 
+      const parts = cleanUrl.split('/');
+      username = parts[parts.length - 1]; 
+  }
+  
+  return username;
+};
+
 const Recommendation = () => {
   const user = useSelector((state) => state.user.data);
   
@@ -19,20 +36,24 @@ const Recommendation = () => {
     setReport(null);
 
     try {
-      // Use the actual username or a fallback
-      const username = user.githubUsername || user.name?.replace(/\s+/g, '').toLowerCase() || "guest";
+      // 1. Get Name identifier (for display purposes)
+      const displayName = user.githubUsername || user.name?.replace(/\s+/g, '').toLowerCase() || "guest";
       
-      console.log(`📡 Sending Analysis Request for: ${username}`);
+      // 2. Extract LeetCode Handle from the correct Redux field: 'user.leetcodeUrl'
+      const leetCodeHandle = extractLeetCodeUsername(user.leetcodeUrl);
 
-      // CHANGED: Using POST request to send the URL securely
+      console.log(`📡 Sending Analysis. Name: ${displayName}, LeetCode Handle: ${leetCodeHandle}`);
+
+      // 3. Send both to the backend
       const response = await fetch(`http://localhost:3000/api/ai/analyze-career`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          username: username,
-          resumeUrl: user.resumeRemoteUrl // Sending the Database URL
+          username: displayName,          // Used for the report header
+          leetcodeUsername: leetCodeHandle, // <--- CRITICAL: The extracted handle for stats
+          resumeUrl: user.resumeRemoteUrl 
         })
       });
       
@@ -52,6 +73,7 @@ const Recommendation = () => {
   };
 
   const getMatchColor = (percentageString) => {
+    if (!percentageString) return "text-gray-600 bg-gray-50 border-gray-200";
     const val = parseInt(percentageString);
     if (val >= 80) return "text-green-600 bg-green-50 border-green-200";
     if (val >= 50) return "text-yellow-600 bg-yellow-50 border-yellow-200";

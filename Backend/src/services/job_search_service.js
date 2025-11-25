@@ -17,7 +17,7 @@ async function fetchJobsForRoles(suggestedRoles, location = 'India') {
             remoteFilter: 'remote',
             salary: '100000+',
             experienceLevel: 'entry level',
-            limit: '2', // Fetch 2 jobs per role to keep it fast
+            limit: '5', // Fetch 5 jobs per role to keep it fast
             page: '0'
         };
 
